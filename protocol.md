@@ -48,13 +48,15 @@ When encoded on wire (note the escaping of byte number 8):
 
 The protocol between Android and Arduino is simple "register based"
 format. The sender must know the format of the byte array. This makes
-the latencies short and the microcontroller code simpler. The downside
-of this approach is that the Android client must know the internal
-details of microcontroller memory. Usually this is not a problem.
+the latencies short and the microcontroller code simpler than in
+Proposal A. The downside of this approach is that the Android client
+must know the internal details of microcontroller memory. Usually this
+is not a problem.
 
-Command starts with `BEGIN_WRITE` (0x7e01). It is followed by seek and
-length parameters. If you write the whole array, seek parameter is
-zero and length parameter is the length of whole array.
+Updating of light state starts with `BEGIN_WRITE` (0x7e01). It is
+followed by seek and length parameters. If you write the whole array,
+seek parameter is zero and length parameter is the length of whole
+array.
 
 Encoding of header bytes (seek and length) depends on the
 architecture. The recommendation is to use unsigned big-endian format
@@ -72,8 +74,17 @@ individual pixels. Separate refresh command is used because there may
 be multiple array updates in different byte positions and we want to
 be sure the array is updated as one pass to avoid tearing in output.
 
-Finally, the receiver is set to `IDLE` mode where it ignores every
-byte sequence but commands like `BEGIN_WRITE`.
+After receiving a command the receiver goes to idle mode where it
+ignores every byte sequence that is not a command.
+
+If the receiver receives invalid input like `BEGIN_WRITE` in the
+middle of an unfinished write, it interrupts the current command and
+starts parsing the new command. This, combined with the idle mode,
+protects the transmit from getting permanently desyncronized in case
+of transmit errors.
+
+Receiver may log these errors or silently ignore them. No rollback of
+written data is necessary.
 
 ### DDR lights
 
