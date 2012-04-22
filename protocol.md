@@ -110,7 +110,7 @@ voxel represents a bit in the array. Header bytes are encoded as
 unsigned 8 bit integers. Every LED row consumes 8^2 bits (8 bytes). A
 single bar of 8 LEDs is encoded as a single byte.
 
-If the cube is buid using PWM technology, a single LED may have 256
+If the cube is built using PWM technology, a single LED may have 256
 levels of brightness. In that case 8^3 cube array length would be 512
 bytes and a single byte represents brightness of a single
 voxel. Header bytes should be encoded using unsigned big-endian 16-bit
