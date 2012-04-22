@@ -77,6 +77,18 @@ integers. Bytes 0–5 represent lights 1–6 and byte values correspond to
 intensity of each light. Light is turned off when value is 0x00 and
 has full intensity when value is 0xff.
 
+An example: Turning lamp #3 to almost half intensity of 0x7e (note: it's escape character):
+
+    7e 01 02 01 7e 00
+
+Another example: Setting all lamps to maximum intensity:
+
+    7e 01 00 06 ff ff ff ff ff ff
+
+In the first example seek was 2 and bytes written was 1. In another
+example, we started from the beginning (seek 0) and wrote the whole
+array (length 6).
+
 ## Elovalo cube
 
 This is not going to be supported by this project but the aim is to be
