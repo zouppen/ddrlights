@@ -27,7 +27,7 @@ See [protocol specs].
 
 [Effect Server]: http://effectserver.org/ "Effect Server"
 
-[protocol specs: protocol.py "Protocol specification"
+[protocol specs]: protocol.py "Protocol specification"
 
 # Contact
 
