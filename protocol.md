@@ -65,7 +65,9 @@ Word32. Same encoding is used for seek and length parameters.
 
 If 0x7e ocurrs in the payload, it is replaced by `LITERAL_ESCAPE`
 (0x7e00). The receiver side does the opposite and replaces
-`LITERAL_ESCAPE` with 0x7e.
+`LITERAL_ESCAPE` with 0x7e. It ensures that 0x7e never occurs alone in
+the byte stream but is always followed with either 0x00
+(`LITERAL_ESCAPE`) or a command byte.
 
 The sender should issue `REFRESH` (0x7e02) command after updating the
 registers. The receiver should *atomically* (or as atomically as
