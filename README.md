@@ -15,17 +15,9 @@ This project is based on the ideas presented in
 
 # Android–Arduino protocol
 
-The protocol between Android and Arduino is using modified [Effect
-Server] protocol. Effect Server is using unidirectional UDP protocol
-for controlling DMX devices in a device-independent manner. 
-
-The original protocol uses datagrams which have natural
-boundaries. Because we are using asynchronous serial communication,
-I've modified the protocol a bit to support character stuffing.
-
-See [protocol specs].
-
-[Effect Server]: http://effectserver.org/ "Effect Server"
+The protocol between Android and Arduino has two candidates. Both are
+described in [protocol specs]. One of these will be selected as the
+"accepted" later on.
 
 [protocol specs]: protocol.md "Protocol specification (protocol.md)"
 
