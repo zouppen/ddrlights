@@ -65,10 +65,15 @@ If 0x7e ocurrs in the payload, it is replaced by `LITERAL_ESCAPE`
 (0x7e00). The receiver side does the opposite and replaces
 `LITERAL_ESCAPE` with 0x7e.
 
-After receiving the whole array the receiver *atomically* (or as
-atomically as desired) updates output like PWM outputs and such. After
-that the receiver is set to `IDLE` mode where it ignores every byte
-sequence but `BEGIN_WRITE`.
+The sender should issue `REFRESH` (0x7e02) command after updating the
+registers. The receiver should *atomically* (or as atomically as
+desired) update its "characteristics", like the PWM duty cycles of
+individual pixels. Separate refresh command is used because there may
+be multiple array updates in different byte positions and we want to
+be sure the array is updated as one pass to avoid tearing in output.
+
+Finally, the receiver is set to `IDLE` mode where it ignores every
+byte sequence but commands like `BEGIN_WRITE`.
 
 ## DDR lights
 
@@ -77,17 +82,24 @@ integers. Bytes 0–5 represent lights 1–6 and byte values correspond to
 intensity of each light. Light is turned off when value is 0x00 and
 has full intensity when value is 0xff.
 
-An example: Turning lamp #3 to almost half intensity of 0x7e (note: it's escape character):
+Example 1: Turning lamp #3 to almost half intensity of 0x7e (note:
+it's escape character):
 
-    7e 01 02 01 7e 00
+    7e 01 02 01 7e 00 7e 02
 
-Another example: Setting all lamps to maximum intensity:
+Example 2: Setting all lamps to maximum intensity:
 
-    7e 01 00 06 ff ff ff ff ff ff
+    7e 01 00 06 ff ff ff ff ff ff 7e 02
+    
+Example 3: Sets lamp #3 *on* and #6 *off*. This is a bit unpractical
+but shows the idea of multiple writes per "frame":
 
-In the first example seek was 2 and bytes written was 1. In another
+    7e 01 02 01 ff 7e 01 05 01 00 7e 02
+
+In the first example seek was 2 and bytes written was 1. In second
 example, we started from the beginning (seek 0) and wrote the whole
-array (length 6).
+array (length 6). In third example we had 2 writes (to positions 3 and
+6) but only one `REFRESH` command in the end.
 
 ## Elovalo cube
 
