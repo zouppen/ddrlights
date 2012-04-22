@@ -6,7 +6,7 @@ capabilities already on Android and use Arduino for doing the actual
 low-level control.
 
 This project is based on the ideas presented in
-[AllAboutEE article]. There is also Youtube video about an
+[AllAboutEE article]. There is also YouTube video about an
 [early version] of this project in action.
 
 [AllAboutEE article]: http://allaboutee.com/2011/12/31/arduino-adk-board-blink-an-led-with-your-phone-code-and-explanation/ "Arduino ADK Board: Blink an LED With Your Phone, Minimum Code Required"
@@ -27,7 +27,7 @@ See [protocol specs].
 
 [Effect Server]: http://effectserver.org/ "Effect Server"
 
-[protocol specs]: protocol.md "Protocol specification"
+[protocol specs]: protocol.md "Protocol specification (protocol.md)"
 
 # Contact
 

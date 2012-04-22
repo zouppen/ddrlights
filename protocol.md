@@ -37,3 +37,7 @@ hexadecimal):
 When encoded on wire (note the escaping of byte number 8):
 
     7e 01 01 00 01 ff 01 02 01 7e 00 7e 02
+
+[Effect Server]: http://effectserver.org/ "Effect Server"
+
+[original protocol]: http://blog.instanssi.org/2012/01/effect-server-ohjelmoitavat-valot-20.html "Effect Server - Ohjelmoitavat Valot 2.0"
