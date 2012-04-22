@@ -1,6 +1,6 @@
 # Android–Arduino protocol
 
-# Proposal A
+## Proposal A
 
 The protocol between Android and Arduino is using modified [Effect
 Server] protocol. Effect Server is using unidirectional UDP protocol
@@ -44,7 +44,7 @@ When encoded on wire (note the escaping of byte number 8):
 
 [original protocol]: http://blog.instanssi.org/2012/01/effect-server-ohjelmoitavat-valot-20.html "Effect Server - Ohjelmoitavat Valot 2.0"
 
-# Proposal B
+## Proposal B
 
 The protocol between Android and Arduino is simple "register based"
 format. The sender must know the format of the byte array. This makes
@@ -75,7 +75,7 @@ be sure the array is updated as one pass to avoid tearing in output.
 Finally, the receiver is set to `IDLE` mode where it ignores every
 byte sequence but commands like `BEGIN_WRITE`.
 
-## DDR lights
+### DDR lights
 
 The array size is 6 bytes and header bytes are encoded as unsigned 8 bit
 integers. Bytes 0–5 represent lights 1–6 and byte values correspond to
@@ -101,18 +101,19 @@ example, we started from the beginning (seek 0) and wrote the whole
 array (length 6). In third example we had 2 writes (to positions 3 and
 6) but only one `REFRESH` command in the end.
 
-## Elovalo cube
+### Elovalo cube
 
 This is not going to be supported by this project but the aim is to be
-compatible with this. Led cube contains 8^3 LEDs and only on/off
-states are supported. Therefore minimum array length is 64 bytes and a
-voxel represents a bit in the array. Header bytes are encoded as
-unsigned 8 bit integers. Every LED row consumes 8^2 bits (8 bytes). A
-single bar of 8 LEDs is encoded as a single byte.
+compatible with this. Led cube contains 8<sup>3</sup> LEDs and only
+on/off states are supported. Therefore minimum array length is 64
+bytes and a voxel represents a bit in the array. Header bytes are
+encoded as unsigned 8 bit integers. Every LED row consumes
+8<sup>2</sup> bits (8 bytes). A single bar of 8 LEDs is encoded as a
+single byte.
 
 If the cube is built using PWM technology, a single LED may have 256
-levels of brightness. In that case 8^3 cube array length would be 512
-bytes and a single byte represents brightness of a single
+levels of brightness. In that case 8<sup>3</sup> cube array, the length
+would be 512 bytes, and a single byte represents brightness of a single
 voxel. Header bytes should be encoded using unsigned big-endian 16-bit
 integers.
 
