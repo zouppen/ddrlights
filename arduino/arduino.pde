@@ -80,6 +80,11 @@ void read_array(void) {
 	for (int i=start; i<len; i++) {
 		uncons(lights+i);
 	}
+
+	// Debug
+	Serial.print("write complete. buffer after: ");
+	for (int i=0; i<LIGHTS_LEN; i++) Serial.print(lights[i],HEX);
+	Serial.println("");
 }
 
 /**
@@ -89,6 +94,7 @@ void hardware_write(void) {
 	for (int i=0; i<LIGHTS_LEN; i++) {
 		analogWrite(LIGHTS_START+i,lights[i]);
 	}
+	Serial.println("refresh complete");
 }
 
 
@@ -115,6 +121,7 @@ int uncons(byte *pos) {
 
 	// Checks if there are ungetted commands
 	if (unget_command != not_command) {
+		Serial.println("tuli kakusta");
 		byte tmp = unget_command;
 		// Cleaning command status caller consumes commands.
 		if (pos == NULL) unget_command = not_command;
@@ -123,6 +130,7 @@ int uncons(byte *pos) {
 
 	// Do the read
 	if (acc.read(&value, 1, timeout_naks) != 1) return is_timeout;
+	Serial.println("luettiin");
 
 	if (value == escape) {
 		// Reads next byte after escape
