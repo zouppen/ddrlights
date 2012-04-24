@@ -6,10 +6,53 @@
     android:orientation="vertical" >
 
     <ToggleButton
-        android:id="@+id/toggleLights"
+        android:id="@+id/toggleLights0"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Toggle lights"
-        android:onClick="blinkLED"/>
+        android:onClick="blinkLED"
+        android:tag="0"/>
+    <ToggleButton
+        android:id="@+id/toggleLights1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Toggle lights"
+        android:onClick="blinkLED"
+        android:tag="1"/>
+    <ToggleButton
+        android:id="@+id/toggleLights2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Toggle lights"
+        android:onClick="blinkLED"
+        android:tag="2"/>
+    <ToggleButton
+        android:id="@+id/toggleLights3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Toggle lights"
+        android:onClick="blinkLED"
+        android:tag="3"/>
+    <ToggleButton
+        android:id="@+id/toggleLights4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Toggle lights"
+        android:onClick="blinkLED"
+        android:tag="4"/>
+    <ToggleButton
+        android:id="@+id/toggleLights5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Toggle lights"
+        android:onClick="blinkLED"
+        android:tag="5"/>
+
+    <TextView
+        android:id="@+id/debug"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Debug info"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
 </LinearLayout>

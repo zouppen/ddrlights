@@ -4,9 +4,10 @@
 #include <AndroidAccessory.h>
 
 // Customizable application specific values
-#define LED_PIN      13 /* Informative LED */
-#define LIGHTS_START 2  /* Lowest pin of lights */
-#define LIGHTS_LEN   6  /* Number of LEDS to control */
+#define LED_PIN      13  /* Informative LED */
+#define LIGHTS_START 2   /* Lowest pin of lights */
+#define LIGHTS_LEN   6   /* Number of LEDS to control */
+#define BUFFER_SIZE  128 /* Maximum receive size */
 
 // Command types
 const byte not_command        = 0x00;
@@ -19,7 +20,7 @@ const int is_payload = not_command;
 
 // Some protocol specific constants and helpers
 const byte escape = 0x7e;
-const unsigned int timeout_naks = 15000; // About a second
+const unsigned int timeout_naks = 0x7fff; // Maximum?
 
 // Globals
 byte lights[LIGHTS_LEN];
@@ -77,14 +78,17 @@ void read_array(void) {
 	// If trying to send too much, exit.
 	if (start+len > LIGHTS_LEN) return;
 
-	for (int i=start; i<len; i++) {
+	for (int i=start; i<start+len; i++) {
 		uncons(lights+i);
 	}
 
 	// Debug
-	Serial.print("write complete. buffer after: ");
-	for (int i=0; i<LIGHTS_LEN; i++) Serial.print(lights[i],HEX);
-	Serial.println("");
+	Serial.print("Write complete. Buffer: ");
+	for (int i=0; i<LIGHTS_LEN; i++) {
+		Serial.print(lights[i],HEX);
+		Serial.print(" ");
+	}
+	Serial.println(".");
 }
 
 /**
@@ -94,7 +98,7 @@ void hardware_write(void) {
 	for (int i=0; i<LIGHTS_LEN; i++) {
 		analogWrite(LIGHTS_START+i,lights[i]);
 	}
-	Serial.println("refresh complete");
+	Serial.println("Refresh complete.");
 }
 
 
@@ -112,29 +116,21 @@ void hardware_write(void) {
  * instead, it returns without consuming anything.
  */
 int uncons(byte *pos) {
-	// TODO use ring buffer for better performance. Until we have
-	// a bottleneck in here, we are doing it dummy way, byte by
-	// byte.
-
 	static byte unget_command = not_command;
 	byte value;
 
 	// Checks if there are ungetted commands
 	if (unget_command != not_command) {
-		Serial.println("tuli kakusta");
 		byte tmp = unget_command;
 		// Cleaning command status caller consumes commands.
 		if (pos == NULL) unget_command = not_command;
 		return tmp;
 	}
 
-	// Do the read
-	if (acc.read(&value, 1, timeout_naks) != 1) return is_timeout;
-	Serial.println("luettiin");
+	value = getc();
 
 	if (value == escape) {
-		// Reads next byte after escape
-		if (acc.read(&value, 1, timeout_naks) != 1) return is_timeout;
+		value = getc();
 
 		// If it is a command
 		if (value != not_command) {
@@ -149,4 +145,36 @@ int uncons(byte *pos) {
 	// output is ignored.
 	if (pos != NULL) *pos = value;
 	return is_payload;
+}
+
+/**
+ * Gets a single character from Android. Should be used only by uncons()
+ * to assure correct escape handling.
+ */
+byte getc() {
+	static byte buffer[BUFFER_SIZE];
+	static byte *ptr = NULL;
+	static byte *end_ptr = NULL;
+
+	if (ptr == end_ptr) {
+		// Reading until we get something
+		while (true) {
+			// Do nothing if accessory is not ready.
+			if (!acc.isConnected()) continue;
+
+			int bytes = acc.read(&buffer, BUFFER_SIZE, timeout_naks);
+			if (bytes < 1) {
+				Serial.println("Ping.");
+				continue;
+			}
+			if (bytes > BUFFER_SIZE) {
+				Serial.println("Buffer overflow, dropping bytes.");
+				bytes = BUFFER_SIZE;
+			}
+			ptr = (byte*)&buffer;
+			end_ptr = (byte*)&buffer + bytes;
+			break;
+		}
+	}
+	return *(ptr++);
 }

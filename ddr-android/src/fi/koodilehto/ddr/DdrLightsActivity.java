@@ -5,7 +5,7 @@ import android.content.*;
 import android.os.*;
 import android.util.Log;
 import android.view.View;
-import android.widget.ToggleButton;
+import android.widget.*;
 import com.android.future.usb.*;
 import java.io.*;
 
@@ -19,7 +19,7 @@ public class DdrLightsActivity extends Activity {
 	private UsbManager mUsbManager;
 	private PendingIntent mPermissionIntent;
 	private boolean mPermissionRequestPending;
-	private ToggleButton buttonLED;
+	private TextView debug;
 
 	UsbAccessory mAccessory;
 	ParcelFileDescriptor mFileDescriptor;
@@ -68,7 +68,7 @@ public class DdrLightsActivity extends Activity {
 		}
 
 		setContentView(R.layout.main);
-		buttonLED = (ToggleButton) findViewById(R.id.toggleLights);
+		debug = (TextView) findViewById(R.id.debug);
 
 	}
 
@@ -147,22 +147,36 @@ public class DdrLightsActivity extends Activity {
 
 	public void blinkLED(View v) {
 
-		byte[] buffer = new byte[1];
+		byte ledID = Byte.parseByte((String)v.getTag());
+		ToggleButton buttonLED = (ToggleButton)v;
+		byte state;
+		
+		if (buttonLED.isChecked()) {
+			debug.setText("light "+ledID);
+			state=(byte)0xff;
+		} else {
+			debug.setText("dim "+ledID);
+			state=(byte)0x00;
+		}
 
-		if (buttonLED.isChecked())
-			buffer[0] = (byte) 0; // button says on, light is off
-		else
-			buffer[0] = (byte) 1; // button says off, light is on
-
+		// Doesn't escape correctly, but there should be no escape problem with this example.
+		byte[] buffer = {0x7e,0x01,ledID,0x01,state,0x7e,0x02};
+		
 		if (mOutputStream != null) {
 			try {
-				Log.v(TAG, "writing " + Byte.toString(buffer[0]));
+				Log.v(TAG, "writing " + arrayToString(buffer) );
 				mOutputStream.write(buffer);
-				Log.v(TAG, "wrote " + Byte.toString(buffer[0]));
 			} catch (IOException e) {
 				Log.e(TAG, "write failed", e);
 			}
 		}
 	}
-
+	
+	private String arrayToString(byte[] arr) {
+		String out = "";
+		for (int i=0; i<arr.length; i++) {
+			out = out + Byte.toString(arr[i])+" ";
+		}
+		return out;
+	}
 }
