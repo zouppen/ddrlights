@@ -4,27 +4,29 @@
 #include <AndroidAccessory.h>
 
 // Customizable application specific values
-#define LED_PIN      13  /* Informative LED */
-#define LIGHTS_START 2   /* Lowest pin of lights */
-#define LIGHTS_LEN   6   /* Number of LEDS to control */
-#define BUFFER_SIZE  128 /* Maximum receive size */
+#define BELT_START  2   /* Lowest PWM port number used in the belt */
+#define BELT_LEN    6   /* Number of PWMs used in the belt */
+#define BUFFER_SIZE 128 /* Maximum receive size */
 
 // Command types
 const byte not_command        = 0x00;
 const byte cmd_begin_write    = 0x01;
 const byte cmd_refresh        = 0x02;
 
-// Other return values from uncons()
-const int is_timeout = -1;
-const int is_payload = not_command;
-
 // Some protocol specific constants and helpers
 const byte escape = 0x7e;
-const unsigned int timeout_naks = 0x7fff; // Maximum?
+const unsigned int timeout_naks = 0xffff; // Maximum timeout length available.
 
-// Globals
-byte lights[LIGHTS_LEN];
+// Defining structure of shared memory. It is not packed. You may
+// modify it to use packed struct, if you are have alignment problems.
+struct
+{
+	// Currently it has only the belt lights.
+	byte belt[BELT_LEN];
 
+} shared;
+
+// Information for Android device follows
 AndroidAccessory acc("Koodilehto",
 		     "DDRController",
 		     "DDR Light belt controller",
@@ -34,14 +36,13 @@ AndroidAccessory acc("Koodilehto",
     
 void setup()
 {
-	// Setup LED and serial for debugging
+	// Setup serial port for debugging
 	Serial.begin(115200);
-	pinMode(LED_PIN, OUTPUT);
 
-	// Set PWM outputs active
-	for (int i=0; i<LIGHTS_LEN; i++) {
-		pinMode(LIGHTS_START+i, OUTPUT);
-		lights[i] = 0; // Dark as default.
+	// Set PWM outputs active and clean shared memory
+	for (int i=0; i<BELT_LEN; i++) {
+		pinMode(BELT_START+i, OUTPUT);
+		shared.belt[i] = 0; // Dark as default.
 	}
 
 	// Start in accessory mode
@@ -65,40 +66,43 @@ void loop()
 }
 
 /**
- * Reads an array from the USB. Fails silently. If that's an issue,
- * you should fix it. Also, this may run uncons in vain after errors,
- * but who really cares if it is in error state anyway.
+ * Reads an array from the USB to the shared memory. Fails
+ * silently. If that's an issue, you should fix it. Also, this may run
+ * uncons in vain after errors, but who really cares if it is in error
+ * state anyway. This is intentionally structure ignorant. It just
+ * writes byte by byte.
  */
 void read_array(void) {
 	byte start, len;
-	
+	byte *data = (byte*)&shared;
+
 	uncons(&start);
 	uncons(&len);
 
 	// If trying to send too much, exit.
-	if (start+len > LIGHTS_LEN) return;
+	if (start+len > sizeof(shared)) return;
 
 	for (int i=start; i<start+len; i++) {
-		uncons(lights+i);
+		uncons(data+i);
 	}
-
-	// Debug
-	Serial.print("Write complete. Buffer: ");
-	for (int i=0; i<LIGHTS_LEN; i++) {
-		Serial.print(lights[i],HEX);
-		Serial.print(" ");
-	}
-	Serial.println(".");
 }
 
 /**
- * Refreshes current buffer to the hardware.
+ * Refreshes the hardware and applies the changes.
  */
 void hardware_write(void) {
-	for (int i=0; i<LIGHTS_LEN; i++) {
-		analogWrite(LIGHTS_START+i,lights[i]);
+	for (int i=0; i<BELT_LEN; i++) {
+		analogWrite(BELT_START+i,shared.belt[i]);
 	}
-	Serial.println("Refresh complete.");
+
+	// Debug
+	Serial.println("Refresh complete. Values: ");
+	for (int i=0; i<BELT_LEN; i++) {
+		Serial.print(shared.belt[i],HEX);
+		Serial.print(" ");
+	}
+	Serial.println("");
+
 }
 
 
@@ -107,44 +111,48 @@ void hardware_write(void) {
  * operating modes. Returns command character, or not_command, if
  * payload byte is received instead.
  * 
- * Case A: When pos is NULL, nothing is written to actual buffer and
- * receiving commands is allowed. If payload byte is received, it is
- * ignored.
+ * Command mode: When pos is NULL, nothing is written to actual buffer
+ * and receiving commands is allowed. If payload byte is received, it
+ * is ignored.
  *
- * Case B: When pos is not NULL, a payload byte is expected and
+ * Payload mode: When pos is not NULL, a payload byte is expected and
  * written to the address of given pointer. If a command is received
  * instead, it returns without consuming anything.
  */
 int uncons(byte *pos) {
 	static byte unget_command = not_command;
 	byte value;
+	bool payload_mode = pos != NULL;
 
 	// Checks if there are ungetted commands
 	if (unget_command != not_command) {
 		byte tmp = unget_command;
-		// Cleaning command status caller consumes commands.
-		if (pos == NULL) unget_command = not_command;
+		// Cleaning command status if in command mode.
+		if (!payload_mode) unget_command = not_command;
 		return tmp;
 	}
 
 	value = getc();
 
+	// Escape character handling.
 	if (value == escape) {
 		value = getc();
 
-		// If it is a command
+		// Is it a command?
 		if (value != not_command) {
-			// If the caller expects payload, unget command.
-			if (pos != NULL) unget_command = value;
+			// In payload mode it is not consuming a command.
+			if (payload_mode) unget_command = value;
 			return value;
 		}
 		// Else, it's a literal escape.
 		value = escape;
 	}
-	// Writing to address only if a buffer is given. Otherwise
+
+	// Writing to pointer only when in payload mode. Otherwise the
 	// output is ignored.
-	if (pos != NULL) *pos = value;
-	return is_payload;
+	if (payload_mode) *pos = value;
+	
+	return not_command;
 }
 
 /**
