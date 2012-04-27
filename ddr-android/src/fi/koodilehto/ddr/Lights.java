@@ -109,7 +109,7 @@ public class Lights {
 		for (int i=0; i<intensities.length; i++) {
 			out.write(intensities[i]);
 			// If was escape, send literal escape, too.
-			if (intensities[i] == 0x7e)	out.write(0x00);
+			if (intensities[i] == 0x7e) out.write(0x00);
 		}
 		out.write(tail);
 	}
