@@ -4,9 +4,8 @@
 #include <AndroidAccessory.h>
 
 // Customizable application specific values
-#define BELT_START  2   /* Lowest PWM port number used in the belt */
-#define BELT_LEN    6   /* Number of PWMs used in the belt */
 #define BUFFER_SIZE 128 /* Maximum receive size */
+const byte belt_leds[] = {2,3,4,5,6,9}; // Pin 7 is used with MAX3421E
 
 // Command types
 const byte not_command        = 0x00;
@@ -16,13 +15,14 @@ const byte cmd_refresh        = 0x02;
 // Some protocol specific constants and helpers
 const byte escape = 0x7e;
 const unsigned int timeout_naks = 0xffff; // Maximum timeout length available.
+const size_t belt_len = sizeof(belt_leds)/sizeof(byte);
 
 // Defining structure of shared memory. It is not packed. You may
 // modify it to use packed struct, if you are have alignment problems.
 struct
 {
 	// Currently it has only the belt lights.
-	byte belt[BELT_LEN];
+	byte belt[belt_len];
 
 } shared;
 
@@ -40,8 +40,8 @@ void setup()
 	Serial.begin(115200);
 
 	// Set PWM outputs active and clean shared memory
-	for (int i=0; i<BELT_LEN; i++) {
-		pinMode(BELT_START+i, OUTPUT);
+	for (int i=0; i<belt_len; i++) {
+		pinMode(belt_leds[i], OUTPUT);
 		shared.belt[i] = 0; // Dark as default.
 	}
 
@@ -91,13 +91,13 @@ void read_array(void) {
  * Refreshes the hardware and applies the changes.
  */
 void hardware_write(void) {
-	for (int i=0; i<BELT_LEN; i++) {
-		analogWrite(BELT_START+i,shared.belt[i]);
+	for (int i=0; i<belt_len; i++) {
+		analogWrite(belt_leds[i],shared.belt[i]);
 	}
 
 	// Debug
 	Serial.println("Refresh complete. Values: ");
-	for (int i=0; i<BELT_LEN; i++) {
+	for (int i=0; i<belt_len; i++) {
 		Serial.print(shared.belt[i],HEX);
 		Serial.print(" ");
 	}
@@ -122,7 +122,7 @@ void hardware_write(void) {
 int uncons(byte *pos) {
 	static byte unget_command = not_command;
 	byte value;
-	bool payload_mode = pos != NULL;
+	const bool payload_mode = pos != NULL;
 
 	// Checks if there are ungetted commands
 	if (unget_command != not_command) {
