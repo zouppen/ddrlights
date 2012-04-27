@@ -12,9 +12,9 @@ import java.io.*;
 public class DdrLightsActivity extends Activity {
 
 	// TAG is used to debug in Android logcat console
-	private static final String TAG = "ArduinoAccessory";
+	public static final String TAG = "DDRLights";
 
-	private static final String ACTION_USB_PERMISSION = "com.google.android.DemoKit.action.USB_PERMISSION";
+	private static final String ACTION_USB_PERMISSION = "fi.koodilehto.ddr.action.USB_PERMISSION";
 
 	private UsbManager mUsbManager;
 	private PendingIntent mPermissionIntent;
@@ -23,8 +23,8 @@ public class DdrLightsActivity extends Activity {
 
 	UsbAccessory mAccessory;
 	ParcelFileDescriptor mFileDescriptor;
-	FileInputStream mInputStream;
-	FileOutputStream mOutputStream;
+	
+	private Lights lights = new Lights(6);
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -85,10 +85,6 @@ public class DdrLightsActivity extends Activity {
 	public void onResume() {
 		super.onResume();
 
-		if (mInputStream != null && mOutputStream != null) {
-			return;
-		}
-
 		UsbAccessory[] accessories = mUsbManager.getAccessoryList();
 		UsbAccessory accessory = (accessories == null ? null : accessories[0]);
 		if (accessory != null) {
@@ -111,6 +107,7 @@ public class DdrLightsActivity extends Activity {
 	@Override
 	public void onPause() {
 		super.onPause();
+		lights.destroyStream();
 		closeAccessory();
 	}
 
@@ -125,8 +122,7 @@ public class DdrLightsActivity extends Activity {
 		if (mFileDescriptor != null) {
 			mAccessory = accessory;
 			FileDescriptor fd = mFileDescriptor.getFileDescriptor();
-			mInputStream = new FileInputStream(fd);
-			mOutputStream = new FileOutputStream(fd);
+			lights.changeStream(new FileOutputStream(fd));
 			Log.d(TAG, "accessory opened");
 		} else {
 			Log.d(TAG, "accessory open fail");
@@ -149,34 +145,16 @@ public class DdrLightsActivity extends Activity {
 
 		byte ledID = Byte.parseByte((String)v.getTag());
 		ToggleButton buttonLED = (ToggleButton)v;
-		byte state;
 		
-		if (buttonLED.isChecked()) {
-			debug.setText("light "+ledID);
-			state=(byte)0xff;
-		} else {
-			debug.setText("dim "+ledID);
-			state=(byte)0x00;
-		}
+		boolean state = buttonLED.isChecked(); 
+		
+		debug.setText("light "+ledID+" "+state);
+		lights.set(ledID, state);
 
-		// Doesn't escape correctly, but there should be no escape problem with this example.
-		byte[] buffer = {0x7e,0x01,ledID,0x01,state,0x7e,0x02};
-		
-		if (mOutputStream != null) {
-			try {
-				Log.v(TAG, "writing " + arrayToString(buffer) );
-				mOutputStream.write(buffer);
-			} catch (IOException e) {
-				Log.e(TAG, "write failed", e);
-			}
+		try {
+			lights.refresh();
+		} catch (IOException e) {
+			Log.e(TAG, "write failed", e);
 		}
-	}
-	
-	private String arrayToString(byte[] arr) {
-		String out = "";
-		for (int i=0; i<arr.length; i++) {
-			out = out + Byte.toString(arr[i])+" ";
-		}
-		return out;
 	}
 }
