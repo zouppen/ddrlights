@@ -6,6 +6,8 @@ import android.os.*;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+import android.widget.AdapterView.OnItemClickListener;
+
 import com.android.future.usb.*;
 import java.io.*;
 
@@ -19,12 +21,12 @@ public class DdrLightsActivity extends Activity {
 	private UsbManager mUsbManager;
 	private PendingIntent mPermissionIntent;
 	private boolean mPermissionRequestPending;
-	private TextView debug;
-
+	
 	UsbAccessory mAccessory;
 	ParcelFileDescriptor mFileDescriptor;
 	
 	private Lights lights = new Lights(6);
+	private int currentView;
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -66,12 +68,37 @@ public class DdrLightsActivity extends Activity {
 			mAccessory = (UsbAccessory) getLastNonConfigurationInstance();
 			openAccessory(mAccessory);
 		}
-
-		setContentView(R.layout.main);
-		debug = (TextView) findViewById(R.id.debug);
-
+		
+		goToSelector();
 	}
 
+	private void goToSelector() {
+		currentView = R.layout.selector;
+		setContentView(R.layout.selector);
+		ListView tasks = (ListView) findViewById(R.id.taskselector);
+		// Ugly but works for now
+		tasks.setOnItemClickListener(new OnItemClickListener() {
+			@Override
+			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
+					long arg3) {
+				currentView = R.layout.toggle;
+				setContentView(R.layout.toggle);
+				
+			}
+		});
+		currentView = R.layout.selector;
+	}
+	
+	@Override
+	public void onBackPressed() 
+	{
+		if (currentView == R.layout.selector) {
+			super.onBackPressed();
+		} else {
+			goToSelector();
+		}
+	}
+	
 	@Override
 	public Object onRetainNonConfigurationInstance() {
 		if (mAccessory != null) {
@@ -148,7 +175,6 @@ public class DdrLightsActivity extends Activity {
 		
 		boolean state = buttonLED.isChecked(); 
 		
-		debug.setText("light "+ledID+" "+state);
 		lights.set(ledID, state);
 
 		try {
