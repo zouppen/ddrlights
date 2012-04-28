@@ -72,6 +72,12 @@ public class DdrLightsActivity extends Activity {
 		goToSelector();
 	}
 
+	private void jumpTo(int id){
+		currentView = id;
+		setContentView(currentView);
+	}
+	
+	// TODO It's now ugly as the hell.
 	private void goToSelector() {
 		currentView = R.layout.selector;
 		setContentView(R.layout.selector);
@@ -79,10 +85,51 @@ public class DdrLightsActivity extends Activity {
 		// Ugly but works for now
 		tasks.setOnItemClickListener(new OnItemClickListener() {
 			@Override
-			public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-					long arg3) {
-				currentView = R.layout.toggle;
-				setContentView(R.layout.toggle);
+			public void onItemClick(AdapterView<?> parent, View view, int pos,
+					long id) {
+				switch (pos) {
+				case 0:
+					jumpTo(R.layout.toggle);
+					break;
+				case 1:
+					SeekBar.OnSeekBarChangeListener listener = new SeekBar.OnSeekBarChangeListener() {
+
+						@Override
+						public void onProgressChanged(SeekBar seekBar,
+								int progress, boolean fromUser) {
+							// Making it more natural by logarithm
+							double natural = Math.pow(progress,2)/Math.pow(seekBar.getMax(),2);
+							
+							byte lightID = Byte.parseByte((String)seekBar.getTag());
+							lights.set(lightID, natural);
+							try {
+								lights.refresh();
+							} catch (IOException e) {
+								// Too tired to process it.
+							}
+						}
+
+						@Override
+						public void onStartTrackingTouch(SeekBar seekBar) {
+						}
+
+						@Override
+						public void onStopTrackingTouch(SeekBar seekBar) {
+						}
+						
+					};
+					
+					jumpTo(R.layout.sliders);
+					((SeekBar)findViewById(R.id.intensityBar0)).setOnSeekBarChangeListener(listener);
+					((SeekBar)findViewById(R.id.intensityBar1)).setOnSeekBarChangeListener(listener);
+					((SeekBar)findViewById(R.id.intensityBar2)).setOnSeekBarChangeListener(listener);
+					((SeekBar)findViewById(R.id.intensityBar3)).setOnSeekBarChangeListener(listener);
+					((SeekBar)findViewById(R.id.intensityBar4)).setOnSeekBarChangeListener(listener);
+					((SeekBar)findViewById(R.id.intensityBar5)).setOnSeekBarChangeListener(listener);
+					break;
+				default	:
+					// Jump nowhere.
+				}
 				
 			}
 		});

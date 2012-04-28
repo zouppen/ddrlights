@@ -66,8 +66,8 @@ public class Lights {
 	 * @param intensity Intensity, in range of 0..1. Allows range overflow but
 	 * leads to saturation. 
 	 */
-	public void set(int lightID, float intensity) {
-		int rawInt = Math.round(intensity*256);
+	public void set(int lightID, double intensity) {
+		long rawInt = Math.round(intensity*256);
 		
 		if (rawInt < 0x00)
 			set(lightID,(byte)0x00);
