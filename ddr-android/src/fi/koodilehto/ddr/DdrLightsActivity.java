@@ -45,6 +45,8 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 	private TimerTask blinkTask;
 	private boolean blinkLeft = false;
 	
+	private long lastBeat = 0;
+	
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -200,7 +202,7 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 							disableBlink();
 							blinkTask = new BlinkTask();
 							blinkTimer = new Timer(true);
-							blinkTimer.schedule(blinkTask, 0, 10*progress);
+							blinkTimer.schedule(blinkTask, 0, 10*(progress+1));
 						}
 
 						@Override
@@ -410,6 +412,21 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 		}
 	}
 
+	public void beatSync(View v) {
+		long now = new Date().getTime();
+		if (lastBeat == 0) {
+			lastBeat = now;
+			return;
+		}
+		long interval = now-lastBeat;
+		lastBeat = now;
+		
+		disableBlink();
+		blinkTask = new BlinkTask();
+		blinkTimer = new Timer(true);
+		blinkTimer.schedule(blinkTask, interval, interval);
+	}
+	
 	private class BlinkTask extends TimerTask {
 
 		@Override
