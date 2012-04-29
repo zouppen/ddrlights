@@ -3,6 +3,8 @@
     <string-array name="tasks">
         <item>Toggle buttons</item>
         <item>Sliders</item>
-        <item>Inertia</item>
-    </string-array>
+        <item>Accelerometer</item>
+        <item>Hasselhoffian wheel</item>
+        <item>Keep beat</item>
+        </string-array>
 </resources>

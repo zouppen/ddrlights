@@ -2,6 +2,7 @@ package fi.koodilehto.ddr;
 
 import android.app.*;
 import android.content.*;
+import android.hardware.*;
 import android.os.*;
 import android.util.Log;
 import android.view.View;
@@ -11,7 +12,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import com.android.future.usb.*;
 import java.io.*;
 
-public class DdrLightsActivity extends Activity {
+public class DdrLightsActivity extends Activity implements SensorEventListener {
 
 	// TAG is used to debug in Android logcat console
 	public static final String TAG = "DDRLights";
@@ -25,8 +26,12 @@ public class DdrLightsActivity extends Activity {
 	UsbAccessory mAccessory;
 	ParcelFileDescriptor mFileDescriptor;
 	
+	private SensorManager mSensorManager;
+	private Sensor mAccelerometer;
+	
 	private Lights lights = new Lights(6);
 	private int currentView;
+	private double[] earthAcc = {0,0,0};
 
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -69,6 +74,11 @@ public class DdrLightsActivity extends Activity {
 			openAccessory(mAccessory);
 		}
 		
+		// Accelerometer
+		mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		
+		// Activate default page
 		goToSelector();
 	}
 
@@ -127,10 +137,16 @@ public class DdrLightsActivity extends Activity {
 					((SeekBar)findViewById(R.id.intensityBar4)).setOnSeekBarChangeListener(listener);
 					((SeekBar)findViewById(R.id.intensityBar5)).setOnSeekBarChangeListener(listener);
 					break;
+				case 2:
+					jumpTo(R.layout.accel);
+					enableAccel();
+					break;
 				default	:
 					// Jump nowhere.
 				}
-				
+
+				if (pos == 2) enableAccel();
+				else disableAccel();
 			}
 		});
 		currentView = R.layout.selector;
@@ -176,13 +192,18 @@ public class DdrLightsActivity extends Activity {
 		} else {
 			Log.d(TAG, "mAccessory is null");
 		}
+		
+		if (currentView == R.layout.accel) {
+			enableAccel();
+		}
 	}
-
+	
 	@Override
 	public void onPause() {
 		super.onPause();
 		lights.destroyStream();
 		closeAccessory();
+		disableAccel();
 	}
 
 	@Override
@@ -229,5 +250,46 @@ public class DdrLightsActivity extends Activity {
 		} catch (IOException e) {
 			Log.e(TAG, "write failed", e);
 		}
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		// Ignored on purpose.
+	}
+
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		final double weight = 0.05;
+		final double[] inZeroG = new double[3];
+		double zeroAcc = 0;
+		
+		for (int i=0; i<3; i++) {
+			// Removing the effect of Earth's gravity from current values
+			inZeroG[i] = event.values[i]-earthAcc[i];
+			zeroAcc += Math.pow(inZeroG[i],2);
+			
+			// Updating Earth direction
+			earthAcc[i] = (1-weight)*earthAcc[i] + weight*event.values[i];
+		}
+		zeroAcc = Math.sqrt(zeroAcc);
+		Log.d(TAG, "Acc: "+zeroAcc);
+		
+		for (int i=0; i<lights.count(); i++) {
+			lights.set(i, Math.pow(zeroAcc,2)/100);
+		}
+		
+		try {
+			lights.refresh();
+		} catch (IOException e) {
+			// Not interested of this.
+		}		
+	}
+	
+	private void enableAccel() {
+		mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+	}
+	
+	private void disableAccel() {
+		mSensorManager.unregisterListener(this);
 	}
 }

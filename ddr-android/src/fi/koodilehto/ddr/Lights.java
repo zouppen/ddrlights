@@ -113,4 +113,12 @@ public class Lights {
 		}
 		out.write(tail);
 	}
+	
+	/**
+	 * Returns the number of light sources.
+	 * @return Light source count
+	 */
+	public int count() {
+		return intensities.length;
+	}
 }
