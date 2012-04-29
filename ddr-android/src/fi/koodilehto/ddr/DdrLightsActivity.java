@@ -41,6 +41,10 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 	private Timer hoffTimer;
 	private TimerTask hoffTask;
 
+	private Timer blinkTimer;
+	private TimerTask blinkTask;
+	private boolean blinkLeft = false;
+	
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
@@ -118,6 +122,7 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 	private void goToSelector() {
 		disableHoffTimer();
 		disableAccel();
+		disableBlink();
 
 		currentView = R.layout.selector;
 		setContentView(R.layout.selector);
@@ -182,6 +187,31 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 					jumpTo(R.layout.hoff);
 					hoffSpeed = (SeekBar) findViewById(R.id.hoffspeed);
 					break;
+				case 4:
+					jumpTo(R.layout.original);
+					SeekBar blinkInterval = (SeekBar) findViewById(R.id.originalSpeed);
+					blinkInterval.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+
+						@Override
+						public void onProgressChanged(SeekBar seekBar,
+								int progress, boolean fromUser) {
+							
+							// Change interval and spawn process
+							disableBlink();
+							blinkTask = new BlinkTask();
+							blinkTimer = new Timer(true);
+							blinkTimer.schedule(blinkTask, 0, 10*progress);
+						}
+
+						@Override
+						public void onStartTrackingTouch(SeekBar seekBar) {	
+						}
+
+						@Override
+						public void onStopTrackingTouch(SeekBar seekBar) {
+						}
+					});
+					break;
 				case 5:
 					jumpTo(R.layout.credits);
 					break;
@@ -198,6 +228,8 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 					enableHoffTimer();
 				else
 					disableHoffTimer();
+				
+				if (pos != 4) disableBlink();
 			}
 		});
 		currentView = R.layout.selector;
@@ -327,6 +359,13 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 		mSensorManager.unregisterListener(this);
 	}
 
+	private void disableBlink() {
+		if (this.blinkTimer == null) return;
+		this.blinkTimer.cancel();
+		this.blinkTimer = null;
+		this.blinkTask = null;
+	}
+	
 	private void disableHoffTimer() {
 		if (this.hoffTimer == null)
 			return;
@@ -363,6 +402,26 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 				double intensity = 1 - (0.5 * rel * rel);
 				lights.set(i, intensity);
 			}
+			try {
+				lights.refresh();
+			} catch (IOException e) {
+				// Uninteresting. Shit may happen.
+			}
+		}
+	}
+
+	private class BlinkTask extends TimerTask {
+
+		@Override
+		public void run() {
+			lights.set(0, blinkLeft);
+			lights.set(1, blinkLeft);
+			lights.set(2, blinkLeft);
+			lights.set(3, !blinkLeft);
+			lights.set(4, !blinkLeft);
+			lights.set(5, !blinkLeft);
+			blinkLeft = !blinkLeft;
+			
 			try {
 				lights.refresh();
 			} catch (IOException e) {
