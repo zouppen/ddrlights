@@ -4,7 +4,8 @@
         <item>Toggle buttons</item>
         <item>Sliders</item>
         <item>Accelerometer</item>
-        <item>Hasselhoffian wheel</item>
-        <item>Keep beat</item>
+        <item>Hoff spinner</item>
+        <item>Beat keeper</item>
+        <item>Credits</item>
         </string-array>
 </resources>
