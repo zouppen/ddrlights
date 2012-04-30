@@ -44,8 +44,8 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 	private Timer blinkTimer;
 	private TimerTask blinkTask;
 	private boolean blinkLeft = false;
-	
-	private long lastBeat = 0;
+	private long lastBeats[] = new long[10];
+	private int oldestBeatIx = 0;
 	
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 		@Override
@@ -414,12 +414,18 @@ public class DdrLightsActivity extends Activity implements SensorEventListener {
 
 	public void beatSync(View v) {
 		long now = new Date().getTime();
-		if (lastBeat == 0) {
-			lastBeat = now;
-			return;
-		}
-		long interval = now-lastBeat;
-		lastBeat = now;
+		long oldest = lastBeats[oldestBeatIx];
+		lastBeats[oldestBeatIx] = now;
+		
+		// Moving the head of the ring buffer.
+		if (oldestBeatIx == 0) oldestBeatIx = lastBeats.length-1; 
+		else oldestBeatIx--;
+		
+		// If the element is not initialised, don't make decade-long intervals
+		if (oldest == 0) return;
+		
+		// Beat interval calculation is schoolboy mathematics.
+		long interval = (now-oldest)/lastBeats.length;
 		
 		disableBlink();
 		blinkTask = new BlinkTask();
